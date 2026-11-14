@@ -33,4 +33,4 @@ O ClimaView nasceu de uma ideia simples: consultar a previsão do tempo de um je
 
 ---
 
-Designed & built by [Bruno Moreau](https://github.com/brumo97). Curious about what's next? [Follow along](https://github.com/brumo97).
+Designed & developed by [Bruno Oliveira Moreau](https://github.com/brumo97). Curious about what's next? [Follow along](https://github.com/brumo97).
