@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClimaView</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1 class="app-title">ClimaView</h1>
+
+    <!-- Controles discretos; ficam escondidos até o usuário escolher o primeiro idioma -->
+    <div class="header-actions" id="header-actions" hidden>
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-pressed="false">
+        <span class="theme-toggle-icon" id="theme-toggle-icon" aria-hidden="true"></span>
+      </button>
+      <div class="language-switcher" id="language-switcher">
+        <button type="button" class="language-button" data-lang="pt" aria-label="Português (Brasil)">PT</button>
+        <button type="button" class="language-button" data-lang="fr" aria-label="Français">FR</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main" id="app-main" hidden>
+    <!-- Boas-vindas: some quando uma cidade for carregada (fases seguintes) -->
+    <section class="welcome" id="welcome">
+      <h2 class="welcome-title" data-i18n="welcomeTitle"></h2>
+      <p class="welcome-text" data-i18n="welcomeText"></p>
+    </section>
+
+    <form class="search-form" id="search-form" role="search">
+      <label class="visually-hidden" for="search-input" data-i18n="searchLabel"></label>
+      <input
+        type="text"
+        id="search-input"
+        class="search-input"
+        autocomplete="off"
+        data-i18n-placeholder="searchPlaceholder">
+      <button type="submit" class="search-button" data-i18n="searchButton"></button>
+    </form>
+
+    <!-- Mensagens de aviso, erro e carregamento da busca -->
+    <div class="message" id="message" role="status" hidden>
+      <span id="message-text"></span>
+      <button type="button" class="retry-button" id="retry-button" hidden></button>
+    </div>
+
+    <!-- Lista de cidades homônimas -->
+    <section class="results" id="results" hidden>
+      <h2 class="results-title" data-i18n="resultsTitle"></h2>
+      <ul class="results-list" id="results-list"></ul>
+    </section>
+
+    <!-- Card do clima atual (conteúdo montado pelo script.js) -->
+    <section class="current-weather" id="current-weather" aria-live="polite" hidden></section>
+
+    <!-- Próximas 24 horas: lista horizontal rolável -->
+    <section class="forecast" id="hourly-forecast" hidden>
+      <h2 class="forecast-title" data-i18n="hourlyTitle"></h2>
+      <ul class="forecast-list forecast-list-scroll" id="hourly-list"></ul>
+    </section>
+
+    <!-- Próximos 7 dias -->
+    <section class="forecast" id="daily-forecast" hidden>
+      <h2 class="forecast-title" data-i18n="dailyTitle"></h2>
+      <ul class="forecast-list forecast-list-grid" id="daily-list"></ul>
+    </section>
+  </main>
+
+  <!-- Modal de primeira visita: o usuário precisa escolher um idioma para continuar -->
+  <div class="modal-overlay" id="language-modal" role="dialog" aria-modal="true" aria-labelledby="language-modal-title">
+    <div class="modal-box">
+      <h2 id="language-modal-title" class="modal-title">Choisis ta langue · Escolha o idioma</h2>
+      <div class="modal-options">
+        <button type="button" class="modal-option" data-lang="pt">🇧🇷 Português</button>
+        <button type="button" class="modal-option" data-lang="fr">🇫🇷 Français</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

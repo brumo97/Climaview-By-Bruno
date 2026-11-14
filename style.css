@@ -1,0 +1,858 @@
+/* ==========================================================================
+   VARIÁVEIS
+   Valores repetidos ficam aqui para o visual ser ajustado em um só lugar
+   ========================================================================== */
+
+/* Registrar as variáveis como cores permite fazer transition nelas */
+@property --bg-a {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #3a4a6b;
+}
+
+@property --bg-b {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #1f2a44;
+}
+
+:root {
+  /* Fundo neutro, usado antes de qualquer busca */
+  --bg-a: #3a4a6b;
+  --bg-b: #1f2a44;
+
+  --text-color: #ffffff;
+  /* Texto secundário e vidro calibrados para manter o contraste AA em todos os fundos */
+  --text-muted: rgba(255, 255, 255, 0.9);
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-bg-strong: rgba(255, 255, 255, 0.22);
+  --glass-border: rgba(255, 255, 255, 0.28);
+  --glass-blur: blur(18px) saturate(140%);
+  --accent: #ffd54f;
+  --accent-2: #ffb300;
+  --accent-ink: #1f2a44;
+
+  --radius: 20px;
+  --radius-sm: 14px;
+  --space: 16px;
+  --max-width: 1100px;
+
+  /* Sombras em camadas dão profundidade sem pesar */
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 8px 24px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.12);
+  --shadow-hover: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 16px 36px rgba(0, 0, 0, 0.28), 0 4px 10px rgba(0, 0, 0, 0.16);
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   BASE E FUNDO DINÂMICO
+   ========================================================================== */
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  /* Pilha de fontes do sistema: sem requisição externa (critério 9 do PRD) */
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  color: var(--text-color);
+  background: linear-gradient(135deg, var(--bg-a), var(--bg-b));
+  background-attachment: fixed;
+  /* Gradientes não animam direto; animamos as duas cores que os compõem */
+  transition: --bg-a 1s ease, --bg-b 1s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Brilhos suaves por cima do gradiente, para dar profundidade */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(600px circle at 15% 10%, rgba(255, 255, 255, 0.12), transparent 60%),
+    radial-gradient(500px circle at 85% 90%, rgba(255, 255, 255, 0.08), transparent 60%);
+}
+
+/* Fundo dinâmico: o script define data-weather e data-period no body.
+   Cores escuras o bastante para manter o texto branco legível */
+/* Cores de dia ajustadas na Fase 8 para o texto pequeno passar no contraste WCAG AA (4,5:1) */
+body[data-period='day'][data-weather='clear']  { --bg-a: #1e5281; --bg-b: #17518c; }
+body[data-period='day'][data-weather='partly'] { --bg-a: #315272; --bg-b: #2c4f73; }
+body[data-period='day'][data-weather='cloudy'] { --bg-a: #444f5a; --bg-b: #3f4b58; }
+body[data-period='day'][data-weather='fog']    { --bg-a: #485057; --bg-b: #465059; }
+body[data-period='day'][data-weather='rain']   { --bg-a: #3a5269; --bg-b: #2b3f55; }
+body[data-period='day'][data-weather='snow']   { --bg-a: #415061; --bg-b: #405164; }
+body[data-period='day'][data-weather='storm']  { --bg-a: #3b3a5c; --bg-b: #232240; }
+
+body[data-period='night'][data-weather='clear']  { --bg-a: #172554; --bg-b: #0b1230; }
+body[data-period='night'][data-weather='partly'] { --bg-a: #1e2a4d; --bg-b: #10172e; }
+body[data-period='night'][data-weather='cloudy'] { --bg-a: #2b3342; --bg-b: #171c27; }
+body[data-period='night'][data-weather='fog']    { --bg-a: #3a424d; --bg-b: #232830; }
+body[data-period='night'][data-weather='rain']   { --bg-a: #1c2a3d; --bg-b: #0e1622; }
+body[data-period='night'][data-weather='snow']   { --bg-a: #2f3f55; --bg-b: #1a2434; }
+body[data-period='night'][data-weather='storm']  { --bg-a: #1b1a33; --bg-b: #0a0a18; }
+
+/* O atributo hidden perde para display definido em classe, então reforçamos aqui */
+[hidden] {
+  display: none !important;
+}
+
+/* Texto só para leitores de tela (rótulo do campo de busca) */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Foco visível para navegação por teclado (acessibilidade) */
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   ANIMAÇÕES
+   ========================================================================== */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* ==========================================================================
+   CABEÇALHO
+   ========================================================================== */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: var(--space) clamp(16px, 4vw, 24px);
+}
+
+.app-title {
+  margin: 0;
+  font-size: clamp(1.25rem, 4vw, 1.6rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.language-switcher {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.language-button {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-color);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.25s var(--ease), color 0.25s var(--ease);
+}
+
+.language-button:hover {
+  background: var(--glass-bg-strong);
+}
+
+.language-button.is-active {
+  background: var(--text-color);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   CONTEÚDO PRINCIPAL, BOAS-VINDAS E BUSCA
+   ========================================================================== */
+
+.app-main {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: clamp(24px, 6vw, 48px) clamp(16px, 4vw, 24px) 48px;
+  text-align: center;
+}
+
+.welcome {
+  animation: fade-up 0.7s var(--ease) both;
+}
+
+.welcome-title {
+  margin: 0 0 8px;
+  font-size: clamp(1.7rem, 6vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.welcome-text {
+  margin: 0 0 clamp(20px, 4vw, 32px);
+  color: var(--text-muted);
+  font-size: clamp(1rem, 2.6vw, 1.15rem);
+}
+
+.search-form {
+  display: flex;
+  gap: 8px;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 6px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+
+.search-form:focus-within {
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: var(--shadow-card), 0 0 0 4px rgba(255, 213, 79, 0.25);
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 18px;
+  border: none;
+  background: transparent;
+  color: var(--text-color);
+  font: inherit;
+  font-size: 1rem;
+}
+
+/* O anel de foco fica na barra inteira (focus-within), não no campo */
+.search-input:focus-visible {
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-button {
+  padding: 12px 26px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: var(--accent-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(255, 179, 0, 0.35);
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+
+.search-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(255, 179, 0, 0.45);
+}
+
+.search-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ==========================================================================
+   MENSAGENS E LISTA DE CIDADES
+   ========================================================================== */
+
+.message {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  max-width: 600px;
+  margin: var(--space) auto 0;
+  padding: 12px 18px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  animation: pop-in 0.35s var(--ease) both;
+}
+
+.message-error {
+  border-color: #ff8a80;
+  background: rgba(255, 138, 128, 0.18);
+}
+
+.retry-button {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s var(--ease);
+}
+
+.retry-button:hover {
+  transform: translateY(-1px);
+}
+
+.results {
+  max-width: 600px;
+  margin: calc(var(--space) * 1.5) auto 0;
+  text-align: left;
+}
+
+.results-title {
+  margin: 0 0 var(--space);
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.results-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.results-list li {
+  animation: fade-up 0.45s var(--ease) both;
+}
+
+.results-list li:nth-child(2) { animation-delay: 0.05s; }
+.results-list li:nth-child(3) { animation-delay: 0.1s; }
+.results-list li:nth-child(4) { animation-delay: 0.15s; }
+.results-list li:nth-child(n + 5) { animation-delay: 0.2s; }
+
+.city-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 14px 20px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-card);
+  color: var(--text-color);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.25s var(--ease), background 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+
+.city-card:hover {
+  transform: translateY(-2px);
+  background: var(--glass-bg-strong);
+  box-shadow: var(--shadow-hover);
+}
+
+.city-card-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.city-card-place {
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   CLIMA ATUAL
+   ========================================================================== */
+
+.current-weather {
+  max-width: 760px;
+  margin: calc(var(--space) * 2) auto 0;
+  padding: clamp(20px, 5vw, 36px);
+  border: 1px solid var(--glass-border);
+  border-radius: calc(var(--radius) + 6px);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-card);
+  animation: fade-up 0.6s var(--ease) both;
+}
+
+.current-city {
+  margin: 0;
+  font-size: clamp(1.1rem, 3.6vw, 1.4rem);
+  font-weight: 700;
+}
+
+.current-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space);
+  margin-top: var(--space);
+}
+
+.current-emoji {
+  font-size: clamp(3.2rem, 14vw, 4.5rem);
+  line-height: 1;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.25));
+}
+
+.current-temp {
+  font-size: clamp(3.2rem, 14vw, 4.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.current-condition {
+  margin: 8px 0 calc(var(--space) * 1.5);
+  color: var(--text-muted);
+  font-size: clamp(1.05rem, 3vw, 1.25rem);
+}
+
+.current-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.current-detail {
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.07);
+  transition: transform 0.25s var(--ease), background 0.25s var(--ease);
+}
+
+.current-detail:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.current-detail-label {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.current-detail-value {
+  margin: 4px 0 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+/* Skeleton: blocos cinza animados enquanto a previsão carrega */
+.skeleton {
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.2);
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+.skeleton-title {
+  width: 50%;
+  height: 28px;
+  margin: 0 auto;
+}
+
+.skeleton-temp {
+  width: 40%;
+  height: 72px;
+  margin: var(--space) auto;
+}
+
+.skeleton-grid {
+  height: 140px;
+}
+
+/* ==========================================================================
+   PREVISÃO POR HORA E POR DIA
+   ========================================================================== */
+
+.forecast {
+  max-width: var(--max-width);
+  margin: calc(var(--space) * 2) auto 0;
+}
+
+.forecast-title {
+  margin: 0 0 var(--space);
+  font-size: 1.2rem;
+  text-align: left;
+}
+
+.forecast-list {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: 0 0 8px;
+  list-style: none;
+}
+
+/* Só a lista de horas rola na horizontal */
+.forecast-list-scroll {
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
+  /* Espaço para a sombra/elevação dos cards não ser cortada */
+  padding: 6px 2px 12px;
+}
+
+.forecast-list-scroll .forecast-card {
+  scroll-snap-align: start;
+}
+
+/* Os 7 dias ficam em grade que se adapta à largura da tela */
+.forecast-list-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.forecast-card {
+  display: flex;
+  flex: 1 0 96px;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-card);
+  text-align: center;
+  /* --i é definido pelo script; cria a entrada escalonada, com teto para não demorar */
+  animation: fade-up 0.5s var(--ease) both;
+  animation-delay: calc(min(var(--i, 0), 10) * 45ms);
+  transition: transform 0.25s var(--ease), background 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+
+.forecast-card:hover {
+  transform: translateY(-4px);
+  background: var(--glass-bg-strong);
+  box-shadow: var(--shadow-hover);
+}
+
+.forecast-label {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.forecast-emoji {
+  font-size: 2rem;
+  line-height: 1.2;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.25));
+}
+
+.forecast-temp {
+  font-weight: 700;
+}
+
+.forecast-extra {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   MODAL DE IDIOMA
+   ========================================================================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space);
+  background: rgba(8, 12, 28, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.modal-box {
+  width: min(100%, 440px);
+  padding: clamp(20px, 5vw, 32px);
+  border: 1px solid var(--glass-border);
+  border-radius: calc(var(--radius) + 4px);
+  background: rgba(38, 51, 83, 0.92);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  text-align: center;
+  animation: pop-in 0.45s var(--ease) both;
+}
+
+.modal-title {
+  margin: 0 0 20px;
+  font-size: 1.2rem;
+}
+
+.modal-options {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.modal-option {
+  flex: 1;
+  padding: 16px 20px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  color: var(--text-color);
+  font: inherit;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: transform 0.25s var(--ease), background 0.25s var(--ease);
+}
+
+.modal-option:hover {
+  transform: translateY(-2px);
+  background: var(--glass-bg-strong);
+}
+
+/* ==========================================================================
+   RESPONSIVIDADE
+   ========================================================================== */
+
+/* Tablet: 7 dias em duas linhas (4 + 3) */
+@media (max-width: 900px) {
+  .forecast-list-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .forecast-list-grid .forecast-card {
+    flex-basis: auto;
+  }
+}
+
+/* Celular */
+@media (max-width: 560px) {
+  .forecast-list-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .forecast-card {
+    flex-basis: 88px;
+  }
+
+  .current-details {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .search-button {
+    padding: 12px 18px;
+  }
+
+  .modal-options {
+    flex-direction: column;
+  }
+}
+
+/* Quem prefere menos movimento no sistema não vê animações nem transições */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ==========================================================================
+   BOTÃO DE TEMA E AÇÕES DO CABEÇALHO
+   ========================================================================== */
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.theme-toggle {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--glass-border);
+  border-radius: 50%;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  font-size: 1.15rem;
+  cursor: pointer;
+  transition: transform 0.3s var(--ease), background 0.3s var(--ease);
+}
+
+.theme-toggle:hover {
+  transform: rotate(18deg) scale(1.06);
+  background: var(--glass-bg-strong);
+}
+
+/* ==========================================================================
+   TEMA ESCURO PREMIUM
+   Ativado por data-theme="dark" no <html>. Só redefine variáveis e efeitos;
+   a estrutura dos componentes é a mesma do tema claro
+   ========================================================================== */
+
+html {
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Fundo neutro escuro, antes de qualquer busca */
+  --bg-a: #141a2b;
+  --bg-b: #07090f;
+
+  --text-muted: rgba(255, 255, 255, 0.72);
+  --glass-bg: rgba(255, 255, 255, 0.055);
+  --glass-bg-strong: rgba(255, 255, 255, 0.11);
+  --glass-border: rgba(255, 255, 255, 0.11);
+  --glass-blur: blur(22px) saturate(160%);
+
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.07) inset, 0 10px 30px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-hover: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 18px 44px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* Paletas escuras do fundo dinâmico: mesma lógica de clima e dia/noite, bem mais profundas */
+html[data-theme='dark'] body[data-period='day'][data-weather='clear']  { --bg-a: #0f3a6b; --bg-b: #071c38; }
+html[data-theme='dark'] body[data-period='day'][data-weather='partly'] { --bg-a: #1d3a57; --bg-b: #0d1b2b; }
+html[data-theme='dark'] body[data-period='day'][data-weather='cloudy'] { --bg-a: #2b3440; --bg-b: #12161d; }
+html[data-theme='dark'] body[data-period='day'][data-weather='fog']    { --bg-a: #343c45; --bg-b: #16191e; }
+html[data-theme='dark'] body[data-period='day'][data-weather='rain']   { --bg-a: #1b2d40; --bg-b: #0a131d; }
+html[data-theme='dark'] body[data-period='day'][data-weather='snow']   { --bg-a: #2d3d50; --bg-b: #121a24; }
+html[data-theme='dark'] body[data-period='day'][data-weather='storm']  { --bg-a: #1c1a38; --bg-b: #08071a; }
+
+html[data-theme='dark'] body[data-period='night'][data-weather='clear']  { --bg-a: #060b24; --bg-b: #02030c; }
+html[data-theme='dark'] body[data-period='night'][data-weather='partly'] { --bg-a: #0b1229; --bg-b: #03050e; }
+html[data-theme='dark'] body[data-period='night'][data-weather='cloudy'] { --bg-a: #11151d; --bg-b: #050608; }
+html[data-theme='dark'] body[data-period='night'][data-weather='fog']    { --bg-a: #171b21; --bg-b: #07080a; }
+html[data-theme='dark'] body[data-period='night'][data-weather='rain']   { --bg-a: #0a121d; --bg-b: #030609; }
+html[data-theme='dark'] body[data-period='night'][data-weather='snow']   { --bg-a: #121b28; --bg-b: #05080d; }
+html[data-theme='dark'] body[data-period='night'][data-weather='storm']  { --bg-a: #0b0a1c; --bg-b: #020208; }
+
+/* Aurora: brilhos coloridos que derivam devagar atrás do conteúdo */
+@keyframes aurora-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(3%, -2%, 0) scale(1.08); }
+}
+
+html[data-theme='dark'] body::before {
+  inset: -10%;
+  background:
+    radial-gradient(520px circle at 18% 12%, rgba(99, 102, 241, 0.22), transparent 65%),
+    radial-gradient(480px circle at 85% 20%, rgba(20, 184, 166, 0.14), transparent 65%),
+    radial-gradient(560px circle at 70% 92%, rgba(168, 85, 247, 0.16), transparent 65%);
+  animation: aurora-drift 18s ease-in-out infinite;
+}
+
+/* Estrelas discretas, só de noite no tema escuro; pontos feitos com gradientes, sem imagem */
+@keyframes stars-twinkle {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+html[data-theme='dark'] body[data-period='night']::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, #fff, transparent),
+    radial-gradient(1px 1px at 28% 62%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 44% 30%, #fff, transparent),
+    radial-gradient(1px 1px at 61% 80%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 76% 14%, #fff, transparent),
+    radial-gradient(1px 1px at 88% 52%, #fff, transparent),
+    radial-gradient(1px 1px at 6% 88%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 94% 90%, #fff, transparent);
+  background-size: 420px 420px;
+  animation: stars-twinkle 5s ease-in-out infinite;
+}
+
+/* Detalhes dos componentes no escuro */
+html[data-theme='dark'] .language-button.is-active {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+html[data-theme='dark'] .search-form:focus-within {
+  border-color: rgba(255, 213, 79, 0.55);
+  box-shadow: var(--shadow-card), 0 0 0 4px rgba(255, 213, 79, 0.16), 0 0 32px rgba(255, 213, 79, 0.12);
+}
+
+html[data-theme='dark'] .current-detail {
+  border-color: rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html[data-theme='dark'] .current-detail:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+html[data-theme='dark'] .current-emoji,
+html[data-theme='dark'] .forecast-emoji {
+  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.18)) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5));
+}
+
+html[data-theme='dark'] .message-error {
+  border-color: rgba(255, 138, 128, 0.7);
+  background: rgba(255, 138, 128, 0.12);
+}
+
+html[data-theme='dark'] .modal-overlay {
+  background: rgba(2, 3, 10, 0.78);
+}
+
+html[data-theme='dark'] .modal-box {
+  background: rgba(16, 22, 40, 0.94);
+}
+
+html[data-theme='dark'] .skeleton {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+html[data-theme='dark'] .forecast-list-scroll {
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
